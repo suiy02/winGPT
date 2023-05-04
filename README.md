@@ -1,22 +1,27 @@
 
 # winGPT
 
-winGPT is a software that allows you to access chatGPT from anywhere on Windows. The idea behind winGPT was inspired by macGPT for Mac users.
+**winGPT** allows you to directly use chatGPT in the editors of Outlook, Notepad, MS Word, web browsers etc. on Windows. The idea behind winGPT was inspired by macGPT for Mac users.
 
-## How to Use winGPT
+**Usage:**  
+Type **/plz** to start a conversation, press 'Enter' key twice (x2) or Shift+Enter for chatGPT to respond.
 
-To use winGPT, you need to first get an OpenAI API key from https://platform.openai.com/account/api-keys
+**Shortcuts:**  
+You can define shortcuts in **shortcuts.json**, the shortcuts will be replaced with its long form before sending to chatGPT.  
+For example,
+* Use **/plz.sum** to summarize text.  
+* Use **/plz.revise** to revise text.  
+* **[[p]]** or **[[p** will be replaced with the content in the clipboard.  
+* **/plz.sum [[p]]** will summarize the content in the clipboard.  
 
-After downloading the winGPT software, you need to enter your OpenAI API key into the winGPT configuration file. Once you have entered your API key, you can launch winGPT and start using chatGPT from anywhere on your Windows computer.
+See shortcuts.json for more examples, and you can add your own shortcuts there.  
 
-## Features
-
-- Access chatGPT from anywhere on your Windows computer
-- Easy to configure using a configuration file
-- Uses OpenAI API for chatGPT (GPT3.5) access
+**Config file:**  
+You can change the default settings such as the **trigger word** in **config.json** file.
+See config.json for more details.
 
 ## Requirements
-- OpenAI API key
+- OpenAI API key. You need to first get an OpenAI API key from https://platform.openai.com/account/api-keys
 - python3
 
 ## Installation
