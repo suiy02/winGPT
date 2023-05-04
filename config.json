@@ -1,0 +1,7 @@
+{
+    "API_KEY": "",
+    "temperature": 0.7,
+    "system_prompt": "You are an AI assistant.",
+    "time_out" :  40,
+    "trigger_word": "/plz"
+}
