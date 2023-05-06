@@ -1,7 +1,8 @@
 
 # winGPT
+**It is under development.**  
+**winGPT** allows you to directly use chatGPT in the editors of Outlook, Notepad, MS Word, web browsers etc. on Windows. The idea behind winGPT was inspired by macGPT for Mac users.  
 
-**winGPT** allows you to directly use chatGPT in the editors of Outlook, Notepad, MS Word, web browsers etc. on Windows. The idea behind winGPT was inspired by macGPT for Mac users.
 
 **Usage:**  
 Type **/plz** to start a conversation, press 'Enter' key twice (x2) or Shift+Enter for chatGPT to respond.
