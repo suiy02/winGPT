@@ -40,7 +40,7 @@ pip install -r requirements.txt
 pip install pyinstaller
 pyinstaller --onefile wingpt.py
 ```
-
+Make sure to move wingpt.ext, config.json, and shortcuts.json to the same folder.
 ## License
 
 winGPT is licensed under the MIT License. See the LICENSE file for more information.
