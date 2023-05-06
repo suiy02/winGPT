@@ -32,15 +32,28 @@ To install winGPT, simply clone this GitHub repository to your local machine and
 pip install -r requirements.txt
 ```
 
-You can compile wingpt.py to a standalone .exe file using PyInstaller:
+To create a standalone .exe file for wingpt.py, PyInstaller can be used. Follow these steps:
+1. Create a virtual environment:
 ```
 python -m venv wingpt_venv
+```
+2. Activate the virtual environment:
+```
 wingpt_venv\Scripts\activate
+```
+3. Install the required packages:
+```
 pip install -r requirements.txt
 pip install pyinstaller
+```
+4. Use PyInstaller to create a single executable file:
+```
 pyinstaller --onefile wingpt.py
 ```
-Make sure to move wingpt.ext, config.json, and shortcuts.json to the same folder.
+After the file has been created, remember to move wingpt.exe, config.json, and shortcuts.json to the same folder.
+
+
+
 ## License
 
 winGPT is licensed under the MIT License. See the LICENSE file for more information.
