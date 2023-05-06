@@ -31,6 +31,16 @@ To install winGPT, simply clone this GitHub repository to your local machine and
 ```
 pip install -r requirements.txt
 ```
+
+You can compile wingpt.py to a standalone .exe file using PyInstaller:
+```
+python -m venv wingpt_venv
+wingpt_venv\Scripts\activate
+pip install -r requirements.txt
+pip install pyinstaller
+pyinstaller --onefile wingpt.py
+```
+
 ## License
 
 winGPT is licensed under the MIT License. See the LICENSE file for more information.
