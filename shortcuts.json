@@ -1,22 +1,25 @@
 {
+    "<trigger_word>.clear": "This is reserved for clear chat history. Please do not use it.",
+    "<trigger_word>.config": "This is reserved for showing config file. Please do not use it.",
+    "<trigger_word>.shortcuts": "This is reserved for loading shortcuts. Please do not use it.",
     "<trigger_word>.sum": "[[sum]] ",
-    "[[sum]]": "Please summarize the following text using bullet points:\n----\n[[p]]\n----",
+    "[[sum]]": "Please summarize the following text using bullet points:\n----\n",
     "<trigger_word>.revise": "[[revise]] ",
     "[[revise]]": "Please revise the text below to correct any spelling or grammatical errors, enhance clarity, and make it sound more natural. Also, ensure that it is concise: \n----\n" ,
     "<trigger_word>.rephrase": "[[rephrase]] ",
     "[[rephrase]]": "Please rephrase the text below to correct any spelling or grammatical errors, enhance clarity, and make it sound more natural. Also, ensure that it is concise: \n----\n" ,
     "<trigger_word>.reply": "[[reply]] ",
-    "[[reply]]" : "reply to the email below: \n----\n[[p]]\n",
+    "[[reply]]" : "reply to the email below: \n----\n",
     "<trigger_word>.code"  : "[[code]] ",
     "[[code]]"  : "generate code with the following requirements: \n----\n",
     "<trigger_word>.edit"  : "[[edit]] ",
     "[[edit]]"  : "edit the following text for a scientific journal manuscript in MR imaging: \n----\n",
     "<trigger_word>.email.sum": "[[email.sum]] ",
     "[[email.sum]]": "Please summarize the following email chain chronologically, so that I can catch up the conversation.\nThe summary's format should look like this example:\n1. John asked ... (Apr. 5)\n2. Mike suggested ... (Apr. 6)\n3. ...\n------\n",
-    "<trigger_word>.git": "[[linux]] ",
-    "<trigger_word>.linux": "[[linux]] ",
-    "[[linux]]": "Please provide a Linux command to accomplish the task below. Do not forget to ADD '#' symbol at the beginning of the command to prevent the command from being executed until the user confirms it. Return the command ONLY, in one single line, no extra words:\n----\n",
+    "<trigger_word>.gitt": "Provide a git command for the task below, NO need to explain it unless it may be harmful to the system. The command should be the last line. Put a leading '#' symbol at each line of your answer. Make sure to **comment out the commands** so that they won't be accidently executed. \n----\n",
+    "<trigger_word>.git": "I am working with a git repo, [[bash]] ",
+    "<trigger_word>.linux": "[[bash]] ",
     "<trigger_word>.bash": "[[bash]] ",
-    "[[bash]]": "Provide a Linux bash command for the task below. Give a very brief explaination. Give warning if the command may harm the system. The command should be the last line. Put a leading '#' symbol at each line of your answer. Also comment out the command, so I will not execute it by accident. \n----\n"
+    "[[bash]]": "Provide a Linux bash command for the task below. Give a very brief explaination. Give warning if the command may harm the system. The command should be the last line. Put a leading '#' symbol at each line of your answer. Also comment out the commands. \n----\n"
 }
 

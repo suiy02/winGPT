@@ -10,6 +10,8 @@ import win32gui
 import win32process
 import win32api
 from datetime import datetime, timedelta
+from pprint import pprint
+from collections import OrderedDict
 
 API_URL = 'https://api.openai.com/v1/engines/davinci-codex/completions'
 # default trigger word is /gpt
@@ -52,15 +54,9 @@ class ColorPrinter:
             colored_text = colored_text.replace(end_tag, f"{Style.RESET_ALL}{self.color}")
         print(f"{self.color}{colored_text}{Style.RESET_ALL}")
 
-
 print_error = ColorPrinter('red')
 
-def replace_whole_word(text, old_word, new_word):
-    old_word = re.escape(old_word)
-    new_word = re.escape(new_word)
-    return re.sub(r'\b{}\b'.format(old_word), new_word, text)
-
-def get_input():
+def get_input() -> str:
     # initialize empty string
     input_str = ""
     previous_key = None
@@ -116,22 +112,8 @@ def get_input():
     # return the recorded input
     return input_str
 
-def query_gpt_bad(input_str):
-    # return "you just typed:"+input_str
-    # prepare request headers and data
-    headers = {'Content-Type': 'application/json',
-               'Authorization': f'Bearer {API_KEY}'}
-    data = {'prompt': input_str,
-            'max_tokens': 1024,
-            'temperature': 0.5}
-    # send the request to the OpenAI API
-    response = requests.post(API_URL, headers=headers, json=data)
-    # return the API response as a string
-    return response.json()['choices'][0]['text']
 
-
-
-def query_gpt(question, config, chat_history=[]):
+def query_gpt(question:str, config:dict, chat_history=[]):
     # Set API endpoint and parameters
     url = "https://api.openai.com/v1/chat/completions"
     API_KEY = config["API_KEY"]
@@ -175,7 +157,6 @@ def query_gpt(question, config, chat_history=[]):
     return message, chat_history
 
 
-
 def query_gpt_old(question,config):
     # Set API endpoint and parameters
     url = "https://api.openai.com/v1/chat/completions"
@@ -211,8 +192,8 @@ def query_gpt_old(question,config):
     
     return message
 
-def replace_shortcuts(text):
-    content = pyperclip.paste()
+def get_shortcuts(fname='shortcuts.json') -> dict[str, str]:
+    # read shortcuts from a json file
     divider = "\n------\n"
     shortcuts = {
             # default shortcuts as an example
@@ -224,19 +205,20 @@ def replace_shortcuts(text):
  
    # if 'shortcuts.json' exists, read shortcuts from a json file
     try:
-        with open('shortcuts.json', 'r') as f:
-            # add the shortcuts from the file to the beginning of 'shortcuts'
-            shortcuts = json.load(f)
+        with open(fname, 'r') as f:
+            shortcuts = json.load(f, object_pairs_hook=OrderedDict)
     except FileNotFoundError as e:
-        print_error("shortcuts.json not found. Using default shortcuts.")
+        print_error(fname + " not found. Using default shortcuts.")
         e.printed = True
     except json.decoder.JSONDecodeError as e:
         print_error("<b>shortcuts.json</b> format error:")
         print_error(str(e))
     except Exception as e:
         print_error(str(e))  
+    return shortcuts
 
-
+def replace_shortcuts(text: str,shortcuts: dict[str,str]) -> str:
+    content = pyperclip.paste()
     text = text.replace(trigger_word, '<trigger_word>')
 
     for shortcut, long_text in shortcuts.items():
@@ -255,23 +237,27 @@ def get_active_window_name():
 
     _, pid = win32process.GetWindowThreadProcessId(window)
     process_name = win32process.GetModuleFileNameEx(win32api.OpenProcess(0x0400 | 0x0010, False, pid), 0)
-    print("window class name:", class_name, "process name:", process_name)
+    if __debug__:
+        print("window class name:", class_name, "process name:", process_name)
     return process_name
 
 # decorate the chatGPT response according to the active window name
-def decorate_response(text):
+def decorate_response(text: str) -> str:
     window_name = get_active_window_name().lower()
     window_name = window_name.split("\\")[-1]
     decorate_method = {
         "cmd.exe"        : lambda text: add_comment_symbol(text, ":"),
         "powershell.exe" : lambda text: add_comment_symbol(text, "#"),
         "mobaxterm.exe"  : lambda text: add_comment_symbol(text, "#"),
+        "mintty.exe"     : lambda text: add_comment_symbol(text, "#"),
+        "putty.exe"      : lambda text: add_comment_symbol(text, "#"),
+        "wsl.exe"        : lambda text: add_comment_symbol(text, "#"),
     }
     if window_name in decorate_method:
         text = decorate_method[window_name](text)
     return text
 
-def _typing(text, controler):
+def _typing(text:str, controler:pynput.keyboard.Controller)->None:
     # split text by lines \n , and sleep 0.1 second after typing each line.
     lines = text.split("\n")
     if len(lines) == 1:
@@ -283,7 +269,7 @@ def _typing(text, controler):
             time.sleep(0.1)
 
 # a function to comment out the response if it is in a command window or terminal
-def add_comment_symbol(text, comment_symbol=""):
+def add_comment_symbol(text:str, comment_symbol=""):
     if comment_symbol:
         # add comment_symbol to the beginning of each line , if not already commented
         text = "\n".join([comment_symbol + " " + line if not line.startswith(comment_symbol) else line for line in text.split("\n")])
@@ -314,16 +300,18 @@ def usage():
     print("See <b>config.json</b> for more details.")
     print("")
     
-    
 if __name__ == '__main__':
 
     # read API key from file
     default_config = {
         "API_KEY": "",
+        "trigger_word": "/gpt",
         "temperature": 0.7,
         "max_tokens": 1024,
         "time_out": 40,
-        "system_prompt": "You are an AI assistant. Answer the questions in a concise and accurate way"
+        "system_prompt": "You are an AI assistant. Answer the questions in a concise and accurate way",
+        "history_length": 4,
+        "history_timeout_in_seconds": 60    
     }
     
     try:
@@ -345,59 +333,72 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # print(config)
-    trigger_word = config.get("trigger_word", "/gpt")
-    history_length = config.get("history_length", 4)
-    history_timeout_in_seconds = config.get("history_timeout_in_seconds", 60)
+    trigger_word = config["trigger_word"]
+    history_length = config["history_length"]
+    history_timeout_in_seconds = config["history_timeout_in_seconds"]
 
     # print usage
     usage()
 
     print_question = ColorPrinter('yellow')
     print_answer = ColorPrinter('white')
+    print_other = ColorPrinter('cyan')
     controller = pynput.keyboard.Controller()
     typing = lambda text: _typing(text, controller)
     chat_history = []
 
-    # Create a datetime object for January 1, 2023 at 12:00 PM
+    # init a datetime object with January 1, 2023 at 12:00 PM
     time_last_question = datetime(2023, 1, 1, 12, 0, 0)
-
+    shortcuts = get_shortcuts('shortcuts.json')
+    
     while True:
         try:
             # wait for user input
             input_str = get_input()
-            print("get_input:  ", input_str)
+            # print("get_input:  ", input_str)
             # if the input starts with trigger_word, remove the command and send the rest to the API
             if input_str.startswith(trigger_word):
-                input_str = replace_shortcuts(input_str)
+                # clear history if input_str is trigger_word+.clear
+                if input_str.strip() == trigger_word + ".clear":
+                    chat_history = []
+                    print_other("<b>Chat history cleared</b>")
+                    print_other("")
+                    continue
+                if input_str.strip() == trigger_word + ".config":
+                    print_other("<b>Config:</b> ")
+                    pprint(config)
+                    continue
+                if input_str.strip() == trigger_word + ".shortcuts":
+                    print_other("<b>Read in shortcuts.json:</b> ")
+                    shortcuts = get_shortcuts('shortcuts.json')
+                    pprint(shortcuts)
+                    continue
+
+                time_now = datetime.now()
+                if time_now - time_last_question > timedelta(seconds=history_timeout_in_seconds):
+                    chat_history = []
+                    print_other("<b>Chat history cleared</b>")
+                    print_other("")
+                time_last_question = time_now                
+ 
+                if len(chat_history) > history_length:
+                    chat_history = chat_history[-history_length:]
+               
+                input_str = replace_shortcuts(input_str,shortcuts)
                 if input_str.isspace():
                     print_error("input_str is empty, skipping")
                     continue
                 input_str = input_str.strip()
                 print_question ("Q: " + input_str)
                 typing(decorate_response("# chatGPT response: # ") +" \n")
-
-                # send the input to the chatGPT
-                # output_str = query_gpt(input_str,config)
-                # only keep the last 3 lines of the chat history
-                
-                if len(chat_history) > history_length:
-                    chat_history = chat_history[-4:]
-                # remove the history if the last question is 1hr ago
-                time_now = datetime.now()
-                if time_now - time_last_question > timedelta(seconds=history_timeout_in_seconds):
-                    chat_history = []
-                    print("clear chat history")
-                time_last_question = time_now                
-                
+               
                 output_str, chat_history = query_gpt(input_str,config,chat_history)
 
-                # add comment to the response if it is in command windows
+                # comment out the response if it is in terminal or cmd
                 output_str = decorate_response(output_str)
-
                 # print the output to the console
                 print_answer(output_str)
                 # send the output to the active window (e.g. Notepad)
-                
                 typing(output_str)
         except Exception as e:
             print_error(str(e))
