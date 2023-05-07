@@ -18,7 +18,7 @@ API_URL = 'https://api.openai.com/v1/engines/davinci-codex/completions'
 trigger_word = '/gpt'
 
 class ColorPrinter:
-    def __init__(self, color=None):
+    def __init__(self, color=''):
         init() # initialize colorama
         self.color_map = {
             'black': Fore.BLACK,
@@ -29,9 +29,10 @@ class ColorPrinter:
             'magenta': Fore.MAGENTA,
             'cyan': Fore.CYAN,
             'white': Fore.WHITE,
-            'b': Style.BRIGHT
+            'b': Style.BRIGHT,
+            'u': Style.DIM 
         }
-        if color is None:
+        if not color:
             self.color = Fore.WHITE # default color is white
         elif color in self.color_map:
             self.color = self.color_map[color]
@@ -39,13 +40,13 @@ class ColorPrinter:
             print(f"Error: {color} is not a valid color.")
             self.color = Fore.WHITE
 
-    def set_color(self, color):
+    def set_color(self, color:str):
         if color in self.color_map:
             self.color = self.color_map[color]
         else:
             print(f"Error: {color} is not a valid color.")
 
-    def __call__(self, text):
+    def __call__(self, text:str):
         colored_text = text
         for color in self.color_map:
             start_tag = f"<{color}>"
@@ -278,37 +279,55 @@ def add_comment_symbol(text:str, comment_symbol=""):
 def usage():
     print = ColorPrinter('yellow') 
 
-    print("winGPT allows you to use chatGPT in the editors of Outlook, Notepad, MS Word, etc.")
-    print("")
+    wordart = """
+       _       _______ ______ _______ 
+      (_)     (_______|_____ (_______)
+ _ _ _ _ ____  _   ___ _____) )  _    
+| | | | |  _ \| | (_  |  ____/  | |   
+| | | | | | | | |___) | |       | |   
+ \___/|_|_| |_|\_____/|_|       |_|
+     ChatGPT at your fingertips!
+ """
+    
+    print(wordart)
+    # print("")
 
     print.set_color('white')
     tag = "<cyan><b>"
     tag_end = "</b></cyan>"
-
-    print(f"Type {tag}{trigger_word}{tag_end} to start a conversation, press 'Enter' key twice (x2) or Shift+Enter for chatGPT to respond.")
+    print("<b>Usage:</b>")
+    print("In Outlook, Notepad, MS Word, or other text editors, ")
+    print(f"Type {tag}{trigger_word}{tag_end} to start a conversation, press {tag}Enter{tag_end} key twice (x2) or {tag}Shift+Enter{tag_end} for chatGPT to respond.")
     print("")
+  
     print("<b>Shortcuts:</b>")
-    print(f"Type {tag}{trigger_word}.sum{tag_end} to summarize text.")
+    print("Define your prompts as shortcuts in <b>shortcuts.json</b> file, and they will be converted to their full version before being sent to ChatGPT.")
+    print("Example:")
+    print(f"Type {tag}{trigger_word}.sum{tag_end} to summerize text.")
     print(f"Type {tag}{trigger_word}.revise{tag_end} to revise text.")
-    print(f"{tag}[[p]]{tag_end} will be replaced with the content in the clipboard.")
-    print(f"eg. {tag}{trigger_word}.sum [[p]]{tag_end} will summarize the content in the clipboard.")
-    print("See <b>shortcuts.json</b> for more shortcuts examples, and add your own shortcuts there.")
-    # print config file
+    print(f"Use {tag}[[p]] or [[p{tag_end} as substitutes for clipboard content.")
+    print(f"{tag}{trigger_word}.sum [[p]]{tag_end} will create a summary of the clipboard's content.")
+    print("See <b>shortcuts.json</b> for more example prompts, and you can add your own shortcuts there.")
     print("")
+
     print("<b>Config file:</b>")
     print("You can change the default settings in <b>config.json</b> file.")
     print("See <b>config.json</b> for more details.")
     print("")
+
+    print("<b>Commands:</b> ")
+    print(f"{tag}{trigger_word}.clear{tag_end} to clear the chat history.")
+    print(f"{tag}{trigger_word}.config{tag_end} to show the config file.")
+    print(f"{tag}{trigger_word}.shortcuts{tag_end} to show the shortcuts file.")
     
 if __name__ == '__main__':
 
-    # read API key from file
     default_config = {
         "API_KEY": "",
         "trigger_word": "/gpt",
         "temperature": 0.7,
         "max_tokens": 1024,
-        "time_out": 40,
+        "time_out": 60,
         "system_prompt": "You are an AI assistant. Answer the questions in a concise and accurate way",
         "history_length": 4,
         "history_timeout_in_seconds": 60    
@@ -332,7 +351,6 @@ if __name__ == '__main__':
         pause = input("Press any key to continue...")
         sys.exit(1)
 
-    # print(config)
     trigger_word = config["trigger_word"]
     history_length = config["history_length"]
     history_timeout_in_seconds = config["history_timeout_in_seconds"]
