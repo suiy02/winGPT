@@ -58,18 +58,26 @@ class ColorPrinter:
 print_error = ColorPrinter('red')
 
 def get_input() -> str:
-    # initialize empty string
     input_str = ""
     previous_key = None
     recording = False
+    myprint = lambda x: None
     # define a callback function to handle keystrokes
     def on_press(key):
-        # print(key)
-        nonlocal input_str, previous_key, recording
-        # print(key)
+        nonlocal input_str, previous_key, recording,myprint
         try:
-            if key.char == trigger_word[0]:
+            if key.char == trigger_word[0] and not recording:
                 recording = True
+                # if the active window is wingpt, then print the input   
+                window_name = get_active_window_name().lower()
+                window_name = window_name.split("\\")[-1]
+                if window_name == "wingpt.exe":
+                    myprint = lambda x: print(x, end='', flush=True)
+                    input_str += trigger_word
+                    myprint(input_str)
+                    key.char = ''
+                else:
+                    myprint = lambda x: None
         except AttributeError:
             pass            # ignore non-character keys
 
@@ -78,10 +86,12 @@ def get_input() -> str:
                 if key.char == '\x16':
                     # if the user types ctrl+v, then paste the clipboard
                     input_str += pyperclip.paste()
+                    myprint(pyperclip.paste())
                 elif key.char < '\x20': # ignore control characters
                     pass
                 else:
                     input_str += key.char
+                    myprint(key.char)
             except AttributeError:
                 # handle special keys
                 if key == pynput.keyboard.Key.enter:
@@ -91,18 +101,20 @@ def get_input() -> str:
                     else:
                         # append a new line to the input string
                         input_str += '\n'
+                        myprint('\n')
                 elif key == pynput.keyboard.Key.space:
                     input_str += ' '
+                    myprint(' ')
                 elif key == pynput.keyboard.Key.backspace:
                     # remove the last character from the input string
                     input_str = input_str[:-1]
+                    myprint('\b \b')
                 else:
                     # ignore other special keys
                     pass            # ignore non-character keys
             except TypeError:
                 pass            # ignore non-character keys
 
-            # 
             if len(input_str) > len(trigger_word) and not input_str.startswith(trigger_word):
                 return False
         previous_key = key
@@ -193,6 +205,43 @@ def query_gpt_old(question,config):
     
     return message
 
+# get config from config.json
+def get_config(fname='config.json') -> dict:
+    default_config = {
+        "API_KEY": "",
+        "trigger_word": "/gpt",
+        "temperature": 0.7,
+        "max_tokens": 1024,
+        "time_out": 60,
+        "system_prompt": "You are an AI assistant. Answer the questions in a concise and accurate way",
+        "history_length": 4,
+        "history_timeout_in_seconds": 60    
+    }
+    
+    try:
+        with open('config.json', 'r') as f:
+            config = json.load(f)
+            for key, value in default_config.items():
+                if key not in config or config[key] == "":
+                    config[key] = value
+        if config["API_KEY"] == "":
+            print_error("No API key found. Please put your <b>API_KEY</b> in <b>config.json</b> file")
+            print_error("API_KEY can be found at https://beta.openai.com/account/api-keys")
+            pause = input("Press any key to continue...")
+            sys.exit(1)
+    except FileNotFoundError:
+        print_error("config.json not found")
+        print_error("Please create a file named <b>config.json</b> and put your API key in it")
+        print_error("API_KEY can be found at https://beta.openai.com/account/api-keys")   
+        pause = input("Press any key to continue...")
+        sys.exit(1)
+    except json.decoder.JSONDecodeError:
+        print_error("config.json is not a valid json file")
+        pause = input("Press any key to continue...")
+        sys.exit(1)
+    return config
+
+    
 def get_shortcuts(fname='shortcuts.json') -> dict[str, str]:
     # read shortcuts from a json file
     divider = "\n------\n"
@@ -207,7 +256,8 @@ def get_shortcuts(fname='shortcuts.json') -> dict[str, str]:
    # if 'shortcuts.json' exists, read shortcuts from a json file
     try:
         with open(fname, 'r') as f:
-            shortcuts = json.load(f, object_pairs_hook=OrderedDict)
+            # shortcuts = json.load(f, object_pairs_hook=OrderedDict)
+            shortcuts = json.load(f)
     except FileNotFoundError as e:
         print_error(fname + " not found. Using default shortcuts.")
         e.printed = True
@@ -253,12 +303,15 @@ def decorate_response(text: str) -> str:
         "mintty.exe"     : lambda text: add_comment_symbol(text, "#"),
         "putty.exe"      : lambda text: add_comment_symbol(text, "#"),
         "wsl.exe"        : lambda text: add_comment_symbol(text, "#"),
+        "wingpt.exe"     : lambda text: "",
     }
     if window_name in decorate_method:
         text = decorate_method[window_name](text)
     return text
 
 def _typing(text:str, controler:pynput.keyboard.Controller)->None:
+    if not text:
+        return
     # split text by lines \n , and sleep 0.1 second after typing each line.
     lines = text.split("\n")
     if len(lines) == 1:
@@ -317,40 +370,13 @@ def usage():
 
     print("<b>Commands:</b> ")
     print(f"{tag}{trigger_word}.clear{tag_end} to clear the chat history.")
-    print(f"{tag}{trigger_word}.config{tag_end} to show the config file.")
-    print(f"{tag}{trigger_word}.shortcuts{tag_end} to show the shortcuts file.")
+    print(f"{tag}{trigger_word}.config{tag_end} to reload the config.json file.")
+    print(f"{tag}{trigger_word}.shortcuts{tag_end} to reload the shortcuts.json file.")
     
 if __name__ == '__main__':
 
-    default_config = {
-        "API_KEY": "",
-        "trigger_word": "/gpt",
-        "temperature": 0.7,
-        "max_tokens": 1024,
-        "time_out": 60,
-        "system_prompt": "You are an AI assistant. Answer the questions in a concise and accurate way",
-        "history_length": 4,
-        "history_timeout_in_seconds": 60    
-    }
-    
-    try:
-        with open('config.json', 'r') as f:
-            config = json.load(f)
-            for key, value in default_config.items():
-                if key not in config or config[key] == "":
-                    config[key] = value
-        if config["API_KEY"] == "":
-            print_error("No API key found. Please put your <b>API_KEY</b> in <b>config.json</b> file")
-            print_error("API_KEY can be found at https://beta.openai.com/account/api-keys")
-            pause = input("Press any key to continue...")
-            sys.exit(1)
-    except FileNotFoundError:
-        print_error("config.json not found")
-        print_error("Please create a file named <b>config.json</b> and put your API key in it")
-        print_error("API_KEY can be found at https://beta.openai.com/account/api-keys")   
-        pause = input("Press any key to continue...")
-        sys.exit(1)
-
+    # load config file
+    config = get_config('config.json')
     trigger_word = config["trigger_word"]
     history_length = config["history_length"]
     history_timeout_in_seconds = config["history_timeout_in_seconds"]
@@ -383,13 +409,17 @@ if __name__ == '__main__':
                     print_other("")
                     continue
                 if input_str.strip() == trigger_word + ".config":
-                    print_other("<b>Config:</b> ")
+                    print_other("<b>Reload Config:</b> ")
+                    config = get_config('config.json')
+                    trigger_word = config["trigger_word"]
+                    history_length = config["history_length"]
+                    history_timeout_in_seconds = config["history_timeout_in_seconds"]
                     pprint(config)
                     continue
                 if input_str.strip() == trigger_word + ".shortcuts":
-                    print_other("<b>Read in shortcuts.json:</b> ")
+                    print_other("<b>Reload shortcuts in shortcuts.json:</b> ")
                     shortcuts = get_shortcuts('shortcuts.json')
-                    pprint(shortcuts)
+                    pprint(shortcuts,sort_dicts=False, indent=4, width=120, compact=True)
                     continue
 
                 time_now = datetime.now()
@@ -413,11 +443,11 @@ if __name__ == '__main__':
                 output_str, chat_history = query_gpt(input_str,config,chat_history)
 
                 # comment out the response if it is in terminal or cmd
-                output_str = decorate_response(output_str)
+                # output_str = decorate_response(output_str)
                 # print the output to the console
                 print_answer(output_str)
                 # send the output to the active window (e.g. Notepad)
-                typing(output_str)
+                typing(decorate_response(output_str))
         except Exception as e:
             print_error(str(e))
             pass
